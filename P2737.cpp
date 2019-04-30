@@ -14,7 +14,7 @@ void Make()
 	for(int i = 1; i <= MAXM; ++i)
 		Bitp[i] = (1ll * Bitp[i - 1] % Mod * 2 % Mod);
 }
-int N, M, SS, TT, MAXW = 0;
+int N, M, SS, TT;
 struct Node
 {
 	int v, next, w;
@@ -37,35 +37,22 @@ void init(int x, int y, int z)
 	head[x] = cnt;
 }
 
-int tot = 0;
+int tot = 0, MAXW = 0;
 int Ver[MAXN];
 struct Tree
 {
 	int Ls, Rs;
-	int Hash_sum, Hash_tag;
-	int Bit_zero;
-}	T[(MAXM << 2) * 40];
-
-void pushdown(int k, int l, int r)
-{
-	if(!T[k].Hash_tag)
-		return ;
-	if(l != r)
+	int Hash_sum;
+	Tree()
 	{
-		if(T[k].Ls)
-			T[T[k].Ls].Hash_sum = 0, T[T[k].Ls].Hash_tag = 1;
-		if(T[k].Rs)
-			T[T[k].Rs].Hash_sum = 0, T[T[k].Rs].Hash_tag = 1;
+		Ls = Rs = Hash_sum = 0;
 	}
-	T[k].Hash_tag = 0;
-}
+}	T[8000100];
+
 void pushup(int k, int l, int r)
 {
 	int mid = (l + r) >> 1;
 	T[k].Hash_sum = (1ll * T[T[k].Ls].Hash_sum * Pow[r - mid] % Hash + T[T[k].Rs].Hash_sum % Hash) % Hash;
-	int LL = (T[k].Ls) ? T[T[k].Ls].Bit_zero : MAXW + 20;
-	int RR = (T[k].Rs) ? T[T[k].Rs].Bit_zero : MAXW + 20;
-	T[k].Bit_zero = min(LL, RR);
 }
 bool Cmp(int k1, int k2, int l, int r)
 {
@@ -74,43 +61,38 @@ bool Cmp(int k1, int k2, int l, int r)
 	if(!k2)
 		return 0;
 	if(l == r)
-		return T[k1].Bit_zero == l;
-	pushdown(k1, l, r);
-	pushdown(k2, l, r);
+		return T[k1].Hash_sum == 0;
 	int mid = (l + r) >> 1;
 	if(T[T[k1].Rs].Hash_sum == T[T[k2].Rs].Hash_sum)
 		return Cmp(T[k1].Ls, T[k2].Ls, l, mid);
 	else
 		return Cmp(T[k1].Rs, T[k2].Rs, mid + 1, r);
 }
-int Find(int k, int l, int r, int x, int y)
+int Find(int k, int l, int r, int pos)
 {
 	if(!k)
-		return max(x, l);
-	if(x <= l && r <= y)
-		return T[k].Bit_zero;
-	pushdown(k, l, r);
+		return max(pos, l);
+	if(l == r)
+		return -1;
 	int mid = (l + r) >> 1;
-	int Res = MAXW + 20;
-	if(x <= mid)
-		Res = min(Res, Find(T[k].Ls, l, mid, x, y));
-	if(y > mid)
-		Res = min(Res, Find(T[k].Rs, mid + 1, r, x, y));
-	pushup(k, l, r);
-	return Res;
+	int Res;
+	if(pos <= mid && ~(Res = Find(T[k].Ls, l, mid, pos)))
+		return Res;
+	else
+		return Find(T[k].Rs, mid + 1, r, pos);
 }
 void Modify(int &k, int l, int r, int x, int y)
 {
+	if(x > y)
+		return ;
 	T[++tot] = T[k];
 	k = tot;
 	if(x <= l && r <= y)
 	{
 		T[k].Hash_sum = 0;
-		T[k].Hash_tag = 1;
-		T[k].Bit_zero = l;
+		T[k].Ls = T[k].Rs = 0;
 		return ;
 	}
-	pushdown(k, l, r);
 	int mid = (l + r) >> 1;
 	if(x <= mid)
 		Modify(T[k].Ls, l, mid, x, y);
@@ -118,28 +100,20 @@ void Modify(int &k, int l, int r, int x, int y)
 		Modify(T[k].Rs, mid + 1, r, x, y);
 	pushup(k, l, r);
 }
-void Set(int k, int l, int r, int pos)
-{		
+void Set(int &k, int l, int r, int pos)
+{
+	T[++tot] = T[k];
+	k = tot;
 	if(l == r)
 	{
-		T[k].Bit_zero = r + 1;
 		T[k].Hash_sum = base * 1 % Hash;
 		return ;
 	}
-	pushdown(k, l, r);
 	int mid = (l + r) >> 1;
 	if(pos <= mid)
-	{
-		if(!T[k].Ls)
-			T[k].Ls = ++tot;
 		Set(T[k].Ls, l, mid, pos);
-	}
 	else
-	{
-		if(!T[k].Rs)
-			T[k].Rs = ++tot;
 		Set(T[k].Rs, mid + 1, r, pos);
-	}
 	pushup(k, l, r);
 }
 
@@ -149,12 +123,12 @@ struct Data
 	int root;
 	bool operator <(const Data &val)const
 	{
-		return Cmp(root, val.root, 0, MAXW + 20);
+		return Cmp(root, val.root, 0, MAXW + 17);
 	}
 };
 struct Ltree
 {
-	Data key[MAXN + MAXM];
+	Data key[MAXN + MAXM << 1];
 	int dist[MAXN], Lt[MAXN], Rt[MAXN], Tp, siz;
 	void Swap(int &x, int &y)
 	{
@@ -193,36 +167,37 @@ struct Ltree
 	}
 }	Ltr;
 
+bool vis[MAXN];
 void Dijkstra()
 {
-	Ltr.push((Data){SS, ++tot});
-	Ver[SS] = tot;
+	Ltr.push((Data){SS, 0});
+	Ver[SS] = 0;
 	while(!Ltr.empty())
 	{
 		Data temp = Ltr.top();
 		Ltr.pop();
 		int from = temp.idx;
-		if(T[temp.root].Hash_sum != T[Ver[from]].Hash_sum)
+		if(vis[from])
 			continue;
+		Ver[from] = temp.root;
+		vis[from] = 1;
 		for(int k = head[from]; k; k = edge[k].next)
 		{
 			int to = edge[k].v;
-			int cur = Find(Ver[from], 0, MAXW + 20, edge[k].w, MAXW + 20);
-			Data tp = (Data){to, Ver[from]};
-			Modify(tp.root, 0, MAXW + 20, edge[k].w, cur);
-			Set(tp.root, 0, MAXW + 20, cur);
-			if(!Ver[to] || Cmp(tp.root, Ver[to], 0, MAXW + 20))
-				Ltr.push(tp), Ver[to] = tp.root;
+			int cur = Find(Ver[from], 0, MAXW + 17, edge[k].w);
+			int tp = temp.root;
+			Modify(tp, 0, MAXW + 17, edge[k].w, cur - 1);
+			Set(tp, 0, MAXW + 17, cur);
+			Ltr.push((Data){to, tp});
 		}
 	}
 }
 int Calc(int k, int l, int r)
 {
-	if(!k)
+	if(T[k].Hash_sum == 0)
 		return 0;
 	if(l == r)
-		return ((T[k].Bit_zero == l) ^ 1) * Bitp[l] % Mod;
-	pushdown(k, l, r);
+		return Bitp[l] % Mod;
 	int mid = (l + r) >> 1;
 	return (Calc(T[k].Ls, l, mid) % Mod + Calc(T[k].Rs, mid + 1, r) % Mod) % Mod;
 }
@@ -240,6 +215,6 @@ int main()
 	}
 	SS = read(), TT = read();
 	Dijkstra();
-	printf("%d\n", Calc(Ver[TT], 0, MAXW + 20));
+	printf("%d\n", Calc(Ver[TT], 0, MAXW + 17));
 	return 0;
 }
