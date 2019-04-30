@@ -1,4 +1,5 @@
 #include<cstdio>
+#include<algorithm>
 #define min(_a, _b) (_a < (_b) ? _a : (_b))
 #define max(_a, _b) (_a > (_b) ? _a : (_b))
 
@@ -123,47 +124,30 @@ struct Data
 	int root;
 	bool operator <(const Data &val)const
 	{
-		return Cmp(root, val.root, 0, MAXW + 17);
+		return Cmp(val.root, root, 0, MAXW + 20);
 	}
 };
 struct Ltree
 {
 	Data key[MAXN + MAXM << 1];
-	int dist[MAXN], Lt[MAXN], Rt[MAXN], Tp, siz;
-	void Swap(int &x, int &y)
-	{
-		int t = x;
-		x = y;
-		y = t;
-	}
-	int merge(int x, int y)
-	{
-		if(x == 0 || y == 0)
-			return x + y;
-		if(key[y] < key[x])
-			Swap(x, y);
-		Rt[x] = merge(Rt[x], y);
-		if(dist[Lt[x]] < dist[Rt[x]])
-			Swap(Lt[x], Rt[x]);
-		dist[x] = dist[Rt[x]] + 1;
-		return x;
-	}
+	int siz;
 	void push(const Data &val)
 	{
 		key[++siz] = val;
-		Tp = merge(Tp, siz);
+		std::push_heap(key + 1, key + siz + 1);
 	} 		
 	Data top()
 	{
-		return key[Tp];
+		return key[1];
 	}
 	void pop()
 	{
-		Tp = merge(Lt[Tp], Rt[Tp]);
+		std::pop_heap(key + 1, key + siz + 1);
+		--siz;
 	}
 	bool empty()
 	{
-		return Tp == 0;
+		return siz == 0;
 	}
 }	Ltr;
 
@@ -184,10 +168,10 @@ void Dijkstra()
 		for(int k = head[from]; k; k = edge[k].next)
 		{
 			int to = edge[k].v;
-			int cur = Find(Ver[from], 0, MAXW + 17, edge[k].w);
+			int cur = Find(Ver[from], 0, MAXW + 20, edge[k].w);
 			int tp = temp.root;
-			Modify(tp, 0, MAXW + 17, edge[k].w, cur - 1);
-			Set(tp, 0, MAXW + 17, cur);
+			Modify(tp, 0, MAXW + 20, edge[k].w, cur - 1);
+			Set(tp, 0, MAXW + 20, cur);
 			Ltr.push((Data){to, tp});
 		}
 	}
@@ -215,6 +199,6 @@ int main()
 	}
 	SS = read(), TT = read();
 	Dijkstra();
-	printf("%d\n", Calc(Ver[TT], 0, MAXW + 17));
+	printf("%d\n", Calc(Ver[TT], 0, MAXW + 20));
 	return 0;
 }
