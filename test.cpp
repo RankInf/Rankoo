@@ -1,23 +1,34 @@
-//T1
+//T2
 #include<cstdio>
 #include<cstring>
+#include<algorithm>
 #define R register
-#define MAXN 1000010
+#define MAXN 6010
 using namespace std;
-int n,m,fa[MAXN];
+int F[MAXN][MAXN],n,A[MAXN],G[MAXN][MAXN],H[MAXN][MAXN];
 int main(){
-	scanf("%d%d",&n,&m);
-	if(n == 0) return !puts("-1");
-	if(n == 1 && m != 1) return !puts("-1");
-	if(n == 1) return 0;
-	int cnt = 1,now = n;
-	for(R int i = 1; i <= n; i++) fa[i] = i - 1;
-	while(cnt < m){
-		if(now - 2 <= 0) break;
-		fa[now] = now - 2; ++cnt; now = now - 2;
+	scanf("%d",&n);
+	for(R int i = 1; i <= n; i++) scanf("%d",A+i);
+	for(R int i = 1; i <= n; i++){
+		int MX = A[i], MN = A[i];
+		for(R int j = i; j; j--){
+			MX = max(MX,A[j]); MN = min(MN,A[j]);
+			G[i][i - j + 1] = MX - MN;
+		} G[i][i + 1] = 0x3f3f3f3f;
 	}
-	if(cnt != m) return !puts("-1");
-	for(R int i = 2; i <= n; i++)
-		printf("%d\n",fa[i]);
+	F[1][1] = H[1][1] = 1;
+	for(R int i = 2; i <= n; i++){
+		int MX = A[i], MN = A[i];
+		for(R int j = i; j; j--){
+			MX = max(MX,A[j]); MN = min(MN,A[j]);
+			int k = lower_bound(G[j-1] + 1, G[j-1] + j + 1, MX - MN) - G[j-1] - 1; 
+			k = j - k;
+		//	printf("k = %d\n",k);
+			F[i][j] = H[j-1][k] + 1;
+		//	printf("F[%d][%d] = %d\n",i,j,F[i][j]);
+		} H[i][i] = F[i][i];
+		for(R int j = i - 1; j; j--)
+			H[i][j] = max(F[i][j],H[i][j+1]);//, printf("H[%d][%d] = %d\n",i,j,H[i][j]);
+	} printf("%d",H[n][1]);
 	return 0;
 }
