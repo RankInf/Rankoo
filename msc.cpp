@@ -15,20 +15,21 @@ ll read() {
 void build(ll x) {
 	int now = 0, cnt = res;
 	for(; ~cnt; cnt--)
-		now = trie[x & (1ll << cnt) > 0][now] ? trie[x & (1ll << cnt) > 0][now] : (trie[x & (1ll << cnt) > 0][now] = ++tot);
+		now = trie[(x & (1ll << cnt)) > 0][now] ? trie[(x & (1ll << cnt)) > 0][now] : (trie[(x & (1ll << cnt)) > 0][now] = ++tot);
 }
 ll query(ll x) {
 	int now = trie[0][0], cnt = res - 1;
 	ll cur = 1ll << res;
 	for(; now && (~cnt); cnt--) {
-		int tmp = trie[x & (1ll << cnt) > 0][now];
+		int tmp = trie[(x & (1ll << cnt)) > 0][now];
 		if(!tmp)
-			tmp = trie[(x & (1ll << cnt) > 0) ^ 1][now], cur |= (1ll << cnt);
+			tmp = trie[((x & (1ll << cnt)) > 0) ^ 1][now], cur |= (1ll << cnt);
 		now = tmp;
 	}
 	return cur;			
 }
 int main() {
+	freopen("msc.in", "r", stdin);
 	n = read();
 	for(int i = 1; i <= n; ++i)
 		ar[i] = read(), ar[i] > maxa ? maxa = ar[i] : 0;
